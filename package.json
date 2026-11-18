@@ -1,0 +1,8 @@
+{
+  "name": "woori-hospital-notebook",
+  "version": "1.0.0",
+  "description": "우리병원수첩 (우병수) - 전 연령 통합 병원·복약·실손보험 관리 앱",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
