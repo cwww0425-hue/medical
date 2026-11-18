@@ -1,1 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>우리병원수첩 (우병수) - 온 가족 병원·복약·실손보험 관리</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* 어르신 큰 글씨 모드 */
+    body.senior-mode {
+      font-size: 18px;
+    }
+    body.senior-mode .text-xs { font-size: 0.95rem !important; }
+    body.senior-mode .text-sm { font-size: 1.1rem !important; }
+    body.senior-mode .text-base { font-size: 1.25rem !important; }
+    body.senior-mode .text-lg { font-size: 1.45rem !important; }
+    body.senior-mode .text-xl { font-size: 1.65rem !important; }
+    body.senior-mode button, body.senior-mode input, body.senior-mode textarea {
+      padding-top: 0.85rem !important;
+      padding-bottom: 0.85rem !important;
+    }
+  </style>
+</head>
+<body class="text-slate-800 flex justify-center min-h-screen">
 
+  <!-- 모바일 앱 컨테이너 -->
+  <div class="w-full max-w-md bg-white min-h-screen shadow-xl flex flex-col relative pb-24">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-teal-600 text-white px-5 pt-5 pb-4 rounded-b-3xl shadow-md sticky top-0 z-20">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="bg-white text-teal-700 font-extrabold px-2.5 py-1 rounded-xl text-sm shadow-sm">우병수</span>
+          <h1 class="text-lg font-bold tracking-tight">우리병원수첩</h1>
+        </div>
+        <!-- 큰 글씨 모드 토글 버튼 -->
+        <button id="seniorToggleBtn" onclick="toggleSeniorMode()"
+          class="bg-teal-700 hover:bg-teal-800 border border-teal-400 text-xs font-semibold px-3 py-1.5 rounded-full transition flex items-center gap-1">
+          <span>🔍</span> <span id="seniorToggleText">큰 글씨 켜기</span>
+        </button>
+      </div>
+
+      <!-- 가족 프로필 선택 바 -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <button onclick="selectMember('나 (본인)')" id="member-나 (본인)"
+          class="member-chip bg-white text-teal-700 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm whitespace-nowrap">
+          👤 나 (본인)
+        </button>
+        <button onclick="selectMember('어머니')" id="member-어머니"
+          class="member-chip bg-teal-700/60 text-teal-100 font-medium text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap">
+          👵 어머니
+        </button>
+        <button onclick="selectMember('우리 아이')" id="member-우리 아이"
+          class="member-chip bg-teal-700/60 text-teal-100 font-medium text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap">
+          👶 우리 아이
+        </button>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="flex-1 px-4 pt-5 space-y-6">
+
+      <!-- 탭 1: 병원 예약 관리 -->
+      <section id="tab-appointments" class="tab-content space-y-4">
+        <!-- 다가오는 예약 2~3일 전 알람 배너 -->
+        <div id="alarmBanner" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <div class="text-2xl">🔔</div>
+          <div>
+            <p class="text-xs font-bold text-amber-800">예약 D-2 사전 알림</p>
+            <p id="alarmText" class="text-sm font-semibold text-slate-800 mt-0.5">
+              모레(11/20) 오전 10:30 서울성모병원 내과 진료가 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- AI 스마트 예약 등록 카드 -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-800">📲 카톡·문자 / 예약증 자동 등록</h2>
+            <span class="text-xs bg-teal-100 text-teal-700 font-semibold px-2 py-0.5 rounded-md">AI 자동인식</span>
+          </div>
+          <p class="text-xs text-slate-500">
+            병원에서 받은 예약 카톡·문자를 붙여넣거나, 예약증 사진을 올리면 날짜와 주의사항을 자동 등록합니다.
+          </p>
+
+          <textarea id="appointmentInput" rows="3"
+            placeholder="예: [서울아산병원] 홍길동님 11월 25일 14:00 소화기내과 진료예약 완료. 검사 8시간 전 금식 바랍니다."
+            class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-teal-500 bg-white"></textarea>
+
+          <div class="flex items-center gap-2">
+            <label class="flex-1 cursor-pointer bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold py-2.5 px-3 rounded-xl text-center transition">
+              📷 예약 서류 사진 첨부
+              <input type="file" id="appointmentFile" accept="image/*" class="hidden" onchange="previewFileName('appointmentFile', 'appointmentFileName')" />
+            </label>
+            <button onclick="analyzeData('appointment')"
+              class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow transition">
+              ✨ AI로 예약 등록하기
+            </button>
+          </div>
+          <p id="appointmentFileName" class="text-xs text-teal-600 font-medium hidden"></p>
+        </div>
+
+        <!-- 등록된 예약 목록 -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-700 mb-2.5">📅 등록된 병원 예약 일정</h3>
+          <div id="appointmentList" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- 탭 2: 처방전 & 복약 관리 -->
+      <section id="tab-medications" class="tab-content hidden space-y-4">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-800">💊 처방전 사진으로 복약 자동등록</h2>
+            <span class="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-md">약봉투·처방전</span>
+          </div>
+          <p class="text-xs text-slate-500">
+            처방전이나 약봉투 사진을 찍어 올리면 어떤 약을, 언제(아침/점심/저녁), 며칠간(3일~3개월) 먹어야 하는지 자동 정리합니다.
+          </p>
+
+          <label class="block cursor-pointer bg-white border-2 border-dashed border-teal-400 hover:bg-teal-50 text-teal-700 text-sm font-bold py-4 px-3 rounded-xl text-center transition">
+            📸 처방전 / 약봉투 사진 선택하기
+            <input type="file" id="prescriptionFile" accept="image/*" class="hidden" onchange="previewFileName('prescriptionFile', 'prescriptionFileName')" />
+          </label>
+          <p id="prescriptionFileName" class="text-xs text-teal-600 font-medium hidden"></p>
+
+          <textarea id="prescriptionInput" rows="2"
+            placeholder="사진이 없다면 약 이름이나 복용 안내를 직접 입력해도 됩니다. (예: 타이레놀 500mg 식후 30분 하루 3번 3일치)"
+            class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-teal-500 bg-white"></textarea>
+
+          <button onclick="analyzeData('prescription')"
+            class="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-3 rounded-xl shadow transition">
+            ✨ 처방전 분석 및 복약 알림 등록
+          </button>
+        </div>
+
+        <!-- 오늘의 복약 스케줄 -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-700 mb-2.5">⏰ 오늘 복용해야 할 약</h3>
+          <div id="medicationList" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- 탭 3: 실손보험 청구 (실손24 연계) -->
+      <section id="tab-insurance" class="tab-content hidden space-y-4">
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-indigo-950">🛡️ 실손보험 청구 가능여부 & 예상환급액</h2>
+            <span class="text-xs bg-indigo-600 text-white font-semibold px-2 py-0.5 rounded-md">실손24 연동</span>
+          </div>
+          <p class="text-xs text-indigo-800">
+            진료비 영수증 사진을 올리면 실손보험 청구 가능 여부, 예상 환급금액, 필요 서류를 계산하고 <strong>실손24</strong> 간편 청구를 연결합니다.
+          </p>
+
+          <label class="block cursor-pointer bg-white border border-indigo-300 hover:bg-indigo-100/50 text-indigo-700 text-sm font-bold py-3.5 px-3 rounded-xl text-center transition">
+            🧾 진료비 영수증 / 세부내역서 첨부
+            <input type="file" id="insuranceFile" accept="image/*" class="hidden" onchange="previewFileName('insuranceFile', 'insuranceFileName')" />
+          </label>
+          <p id="insuranceFileName" class="text-xs text-indigo-700 font-medium hidden"></p>
+
+          <input type="text" id="insuranceInput"
+            placeholder="예: 정형외과 도수치료 및 X-ray 촬영 85,000원 결제"
+            class="w-full text-sm p-3 rounded-xl border border-indigo-200 focus:outline-none focus:border-indigo-500 bg-white" />
+
+          <button onclick="analyzeData('insurance')"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-3 rounded-xl shadow transition">
+            💰 예상 환급금 계산 및 청구 분석
+          </button>
+        </div>
+
+        <!-- 보험 분석 결과 카드 -->
+        <div id="insuranceResultArea" class="space-y-3"></div>
+
+        <!-- 실손24 바로가기 배너 -->
+        <div class="bg-slate-800 text-white rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-300">서류 없이 간편하게 병원비 청구</p>
+            <p class="text-sm font-bold mt-0.5">보험개발원 '실손24' 공식 연동</p>
+          </div>
+          <a href="https://www.silson24.or.kr" target="_blank" rel="noopener noreferrer"
+            class="bg-teal-500 hover:bg-teal-400 text-slate-900 font-extrabold text-xs px-3.5 py-2.5 rounded-xl whitespace-nowrap">
+            실손24 청구하기 ↗
+          </a>
+        </div>
+      </section>
+
+      <!-- 탭 4: 전국 병원 찾기 (공공데이터·지도 API 연계) -->
+      <section id="tab-hospitals" class="tab-content hidden space-y-4">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+          <h2 class="text-base font-bold text-slate-800">🏥 전국 병원·약국 통합 검색</h2>
+          <p class="text-xs text-slate-500">
+            건강보험심사평가원(HIRA) 공공데이터 및 지도 서비스를 통해 전국 모든 병원의 진료과목, 야간진료 여부, 길찾기를 지원합니다.
+          </p>
+          <div class="flex gap-2">
+            <input type="text" id="hospitalSearchInput" placeholder="병원명, 진료과, 지역 입력 (예: 금천구 내과)"
+              class="flex-1 text-sm p-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:border-teal-500" />
+            <button onclick="searchHospitalMap()"
+              class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-4 rounded-xl">
+              검색
+            </button>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="quickMapSearch('내 주변 야간진료 병원')" class="text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-full hover:bg-slate-100">🌙 야간진료</button>
+            <button onclick="quickMapSearch('내 주변 공휴일 약국')" class="text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-full hover:bg-slate-100">💊 휴일약국</button>
+            <button onclick="quickMapSearch('대학병원 예약센터')" class="text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-full hover:bg-slate-100">🏥 상급종합병원</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl space-y-3">
+        <div class="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-sm font-bold text-slate-800">우병수 AI가 내용을 분석 중입니다...</p>
+        <p class="text-xs text-slate-500">날짜, 복약 시간, 실손보험 항목을 정리하고 있어요.</p>
+      </div>
+    </div>
+
+    <!-- 하단 네비게이션 바 -->
+    <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2.5 px-1 z-30">
+      <button onclick="switchTab('appointments')" id="nav-appointments" class="nav-btn flex flex-col items-center text-teal-600 font-bold text-xs gap-1">
+        <span class="text-xl">📅</span>
+        <span>병원예약</span>
+      </button>
+      <button onclick="switchTab('medications')" id="nav-medications" class="nav-btn flex flex-col items-center text-slate-400 font-medium text-xs gap-1">
+        <span class="text-xl">💊</span>
+        <span>약·처방전</span>
+      </button>
+      <button onclick="switchTab('insurance')" id="nav-insurance" class="nav-btn flex flex-col items-center text-slate-400 font-medium text-xs gap-1">
+        <span class="text-xl">🛡️</span>
+        <span>실손청구</span>
+      </button>
+      <button onclick="switchTab('hospitals')" id="nav-hospitals" class="nav-btn flex flex-col items-center text-slate-400 font-medium text-xs gap-1">
+        <span class="text-xl">🏥</span>
+        <span>병원찾기</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    // 상태 관리 (로컬 스토리지 연동으로 새로고침 후에도 데이터 유지)
+    let currentMember = '나 (본인)';
+    let isSeniorMode = false;
+
+    const defaultAppointments = [
+      {
+        member: '나 (본인)',
+        hospitalName: '서울성모병원',
+        department: '순환기내과',
+        date: '2026-11-20',
+        time: '10:30',
+        notes: '혈액검사 30분 전 도착, 아침 금식 필요',
+        dDay: 'D-2 (알림 예정)'
+      },
+      {
+        member: '어머니',
+        hospitalName: '연세세브란스병원',
+        department: '정형외과',
+        date: '2026-11-24',
+        time: '14:00',
+        notes: '이전 MRI CD 지참 필수',
+        dDay: 'D-6'
+      }
+    ];
+
+    const defaultMedications = [
+      {
+        member: '나 (본인)',
+        hospitalName: '하나이비인후과',
+        durationDays: 5,
+        name: '코싹엘정 (알레르기 비염약)',
+        timing: '아침·저녁 식후 30분',
+        dosage: '1정',
+        taken: false
+      },
+      {
+        member: '어머니',
+        hospitalName: '서울성모병원',
+        durationDays: 90,
+        name: '아모잘탄정 (혈압약)',
+        timing: '매일 아침 식후',
+        dosage: '1정',
+        taken: true
+      }
+    ];
+
+    let appointments = JSON.parse(localStorage.getItem('wbs_appointments')) || defaultAppointments;
+    let medications = JSON.parse(localStorage.getItem('wbs_medications')) || defaultMedications;
+
+    function saveState() {
+      localStorage.setItem('wbs_appointments', JSON.stringify(appointments));
+      localStorage.setItem('wbs_medications', JSON.stringify(medications));
+    }
+
+    // 큰 글씨 모드 전환
+    function toggleSeniorMode() {
+      isSeniorMode = !isSeniorMode;
+      document.body.classList.toggle('senior-mode', isSeniorMode);
+      document.getElementById('seniorToggleText').textContent = isSeniorMode ? '기본 글씨로' : '큰 글씨 켜기';
+    }
+
+    // 가족 프로필 전환
+    function selectMember(member) {
+      currentMember = member;
+      document.querySelectorAll('.member-chip').forEach(btn => {
+        if (btn.id === `member-${member}`) {
+          btn.className = 'member-chip bg-white text-teal-700 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm whitespace-nowrap';
+        } else {
+          btn.className = 'member-chip bg-teal-700/60 text-teal-100 font-medium text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap';
+        }
+      });
+      renderLists();
+    }
+
+    // 하단 탭 전환
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-teal-600', 'font-bold');
+        btn.classList.add('text-slate-400', 'font-medium');
+      });
+      const activeNav = document.getElementById(`nav-${tabName}`);
+      activeNav.classList.remove('text-slate-400', 'font-medium');
+      activeNav.classList.add('text-teal-600', 'font-bold');
+    }
+
+    // 첨부파일 이름 표시
+    function previewFileName(inputId, labelId) {
+      const file = document.getElementById(inputId).files[0];
+      const label = document.getElementById(labelId);
+      if (file) {
+        label.textContent = `📎 선택된 파일: ${file.name}`;
+        label.classList.remove('hidden');
+      }
+    }
+
+    // 파일을 Base64로 변환
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64String = reader.result.split(',')[1];
+          resolve({ base64: base64String, mimeType: file.type });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 서버리스 함수(/api/generate) 호출
+    async function analyzeData(type) {
+      let text = '';
+      let fileInput = null;
+
+      if (type === 'appointment') {
+        text = document.getElementById('appointmentInput').value.trim();
+        fileInput = document.getElementById('appointmentFile').files[0];
+      } else if (type === 'prescription') {
+        text = document.getElementById('prescriptionInput').value.trim();
+        fileInput = document.getElementById('prescriptionFile').files[0];
+      } else if (type === 'insurance') {
+        text = document.getElementById('insuranceInput').value.trim();
+        fileInput = document.getElementById('insuranceFile').files[0];
+      }
+
+      if (!text && !fileInput) {
+        alert('분석할 내용을 입력하거나 사진을 첨부해 주세요.');
+        return;
+      }
+
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+
+      try {
+        let imageBase64 = null;
+        let mimeType = null;
+
+        if (fileInput) {
+          const fileData = await fileToBase64(fileInput);
+          imageBase64 = fileData.base64;
+          mimeType = fileData.mimeType;
+        }
+
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, text, imageBase64, mimeType })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '분석 요청에 실패했습니다.');
+        }
+
+        const data = result.data;
+
+        if (type === 'appointment') {
+          appointments.unshift({
+            member: currentMember,
+            hospitalName: data.hospitalName || '병원명 미상',
+            department: data.department || '일반진료',
+            date: data.date || '날짜 확인필요',
+            time: data.time || '시간 확인필요',
+            notes: data.notes || '특이사항 없음',
+            dDay: '예약 2일 전 자동알림 설정됨'
+          });
+          document.getElementById('appointmentInput').value = '';
+          saveState();
+          renderLists();
+          alert(`✅ [${data.hospitalName}] 예약이 등록되었습니다!\n예약 2~3일 전 핸드폰으로 알림을 보내드립니다.`);
+        } else if (type === 'prescription') {
+          const meds = data.medications || [];
+          meds.forEach(m => {
+            medications.unshift({
+              member: currentMember,
+              hospitalName: data.hospitalName || '처방 병원',
+              durationDays: data.durationDays || 3,
+              name: `${m.name} (${m.effect || '처방약'})`,
+              timing: m.timing || '식후 30분',
+              dosage: m.dosage || '1회분',
+              taken: false
+            });
+          });
+          document.getElementById('prescriptionInput').value = '';
+          saveState();
+          renderLists();
+          alert(`💊 총 ${meds.length}종의 약이 복약 스케줄에 자동 등록되었습니다!`);
+        } else if (type === 'insurance') {
+          renderInsuranceResult(data);
+        }
+      } catch (err) {
+        alert('오류: ' + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }
+    }
+
+    // 실손보험 분석 결과 렌더링
+    function renderInsuranceResult(data) {
+      const container = document.getElementById('insuranceResultArea');
+      const badgeColor = data.eligible ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
+      const badgeText = data.eligible ? '✅ 실손보험 청구 가능' : '⚠️ 청구 대상 확인 필요';
+
+      container.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${badgeColor}">${badgeText}</span>
+            <span class="text-xs text-slate-500">${data.treatmentDate || '최근 진료'}</span>
+          </div>
+          <div>
+            <h4 class="text-base font-bold text-slate-800">${data.hospitalName || '진료 병원'}</h4>
+            <p class="text-xs text-slate-600 mt-1">${data.eligibilityReason}</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 flex justify-between items-center">
+            <div>
+              <p class="text-xs text-slate-500">납부 진료비</p>
+              <p class="text-sm font-bold text-slate-800">${Number(data.totalPaid || 0).toLocaleString()}원</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-indigo-600 font-semibold">예상 환급액</p>
+              <p class="text-lg font-extrabold text-indigo-700">약 ${Number(data.estimatedRefund || 0).toLocaleString()}원</p>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-700 mb-1">📋 필요 서류</p>
+            <p class="text-xs text-slate-600">${(data.requiredDocs || []).join(', ')}</p>
+          </div>
+          <div class="border-t border-slate-100 pt-2.5">
+            <p class="text-xs font-bold text-teal-700 mb-1">💡 실손24 간편 청구 안내</p>
+            <p class="text-xs text-slate-600 leading-relaxed">${data.silson24Guide}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // 복약 완료 토글
+    function toggleMedTaken(index) {
+      medications[index].taken = !medications[index].taken;
+      saveState();
+      renderLists();
+    }
+
+    // 예약 및 복약 리스트 렌더링
+    function renderLists() {
+      const appContainer = document.getElementById('appointmentList');
+      const filteredApps = appointments.filter(a => a.member === currentMember);
+
+      if (filteredApps.length === 0) {
+        appContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6 bg-slate-50 rounded-2xl">등록된 병원 예약이 없습니다.</p>`;
+      } else {
+        appContainer.innerHTML = filteredApps.map(app => `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">${app.date} ${app.time}</span>
+              <span class="text-xs font-semibold text-amber-600">${app.dDay}</span>
+            </div>
+            <div>
+              <h4 class="text-base font-bold text-slate-800">${app.hospitalName} <span class="text-xs font-normal text-slate-500">(${app.department})</span></h4>
+              <p class="text-xs text-slate-600 mt-1">📌 ${app.notes}</p>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const medContainer = document.getElementById('medicationList');
+      const filteredMeds = medications.map((m, idx) => ({ ...m, originalIndex: idx })).filter(m => m.member === currentMember);
+
+      if (filteredMeds.length === 0) {
+        medContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6 bg-slate-50 rounded-2xl">등록된 복약 일정이 없습니다.</p>`;
+      } else {
+        medContainer.innerHTML = filteredMeds.map(med => `
+          <div class="bg-white border ${med.taken ? 'border-slate-200 bg-slate-50 opacity-70' : 'border-teal-200'} rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">${med.timing}</span>
+                <span class="text-xs text-slate-500">${med.durationDays}일치 처방</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800 ${med.taken ? 'line-through' : ''}">${med.name}</h4>
+              <p class="text-xs text-slate-500">${med.hospitalName} · ${med.dosage}</p>
+            </div>
+            <button onclick="toggleMedTaken(${med.originalIndex})"
+              class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${med.taken ? 'bg-slate-200 text-slate-600' : 'bg-teal-600 text-white shadow'}">
+              ${med.taken ? '복용완료 ✓' : '먹었어요'}
+            </button>
+          </div>
+        `).join('');
+      }
+    }
+
+    // 병원 찾기 (지도 API 연동)
+    function searchHospitalMap() {
+      const query = document.getElementById('hospitalSearchInput').value.trim();
+      if (!query) {
+        alert('검색할 병원명이나 진료과를 입력해주세요.');
+        return;
+      }
+      window.open(`https://map.naver.com/p/search/${encodeURIComponent(query)}`, '_blank');
+    }
+
+    function quickMapSearch(keyword) {
+      window.open(`https://map.naver.com/p/search/${encodeURIComponent(keyword)}`, '_blank');
+    }
+
+    // 초기 렌더링
+    renderLists();
+  </script>
+</body>
+</html>
